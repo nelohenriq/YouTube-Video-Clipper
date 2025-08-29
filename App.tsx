@@ -14,7 +14,7 @@ import { MailIcon } from './components/icons/MailIcon';
 import { DownloadIcon } from './components/icons/DownloadIcon';
 import { CloseIcon } from './components/icons/CloseIcon';
 import { extractYouTubeVideoId } from './utils/youtube';
-import { formatTime } from './utils/time';
+import { formatTime, formatTimeForCli } from './utils/time';
 import type { PlayerControls } from './types';
 
 type Theme = 'light' | 'dark';
@@ -28,6 +28,7 @@ const App: React.FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [showPreview, setShowPreview] = useState<boolean>(false);
   const [copyButtonText, setCopyButtonText] = useState<string>('Copy');
+  const [copyCommandButtonText, setCopyCommandButtonText] = useState<string>('Copy');
   const [theme, setTheme] = useState<Theme>('dark');
   const [isDownloadModalOpen, setIsDownloadModalOpen] = useState<boolean>(false);
   
@@ -126,17 +127,25 @@ const App: React.FC = () => {
     setShowPreview(false);
   }, []);
   
-  const handleCopyLink = (link: string) => {
+  const handleCopyLink = useCallback((link: string) => {
     navigator.clipboard.writeText(link).then(() => {
       setCopyButtonText('Copied!');
       setTimeout(() => setCopyButtonText('Copy'), 2000);
     });
-  };
+  }, []);
+
+  const handleCopyCommand = useCallback((command: string) => {
+    navigator.clipboard.writeText(command).then(() => {
+      setCopyCommandButtonText('Copied!');
+      setTimeout(() => setCopyCommandButtonText('Copy'), 2000);
+    });
+  }, []);
 
   const canGenerate = clipStart !== null && clipEnd !== null && clipStart < clipEnd;
   const clipDuration = canGenerate ? clipEnd - clipStart : 0;
   const shareLink = canGenerate ? `https://www.youtube.com/watch?v=${videoId}&start=${Math.floor(clipStart)}&end=${Math.floor(clipEnd)}` : '';
   const shareText = "Check out this video clip I made!";
+  const ytdlpCommand = canGenerate ? `yt-dlp --download-sections "*${formatTimeForCli(clipStart)}-${formatTimeForCli(clipEnd)}" -o "youtube-clip.mp4" "https://www.youtube.com/watch?v=${videoId}"` : '';
 
   return (
     <div className="min-h-screen text-gray-800 dark:text-gray-100 flex flex-col items-center p-4 sm:p-6 lg:p-8">
@@ -287,11 +296,11 @@ const App: React.FC = () => {
           onClick={() => setIsDownloadModalOpen(false)}
         >
           <div 
-            className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-6 sm:p-8 w-11/12 max-w-lg m-4 border border-gray-300 dark:border-gray-700 transition-colors duration-300"
+            className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-6 sm:p-8 w-11/12 max-w-2xl m-4 border border-gray-300 dark:border-gray-700 transition-colors duration-300"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xl font-bold text-gray-800 dark:text-gray-100">How to Download Your Clip</h3>
+              <h3 className="text-xl font-bold text-gray-800 dark:text-gray-100">Download Clip with yt-dlp</h3>
               <button 
                 onClick={(e) => { e.preventDefault(); setIsDownloadModalOpen(false); }} 
                 className="p-2 rounded-full text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700 dark:text-gray-400 transition-colors duration-300"
@@ -302,22 +311,25 @@ const App: React.FC = () => {
             </div>
             <div className="space-y-4 text-gray-600 dark:text-gray-300 transition-colors duration-300">
               <p>
-                Direct video downloads are not possible from this tool. However, you can use the clip link with a third-party YouTube downloader service.
+                You can download your clip using the popular command-line tool <a href="https://github.com/yt-dlp/yt-dlp" target="_blank" rel="noopener noreferrer" className="text-brand-blue hover:underline font-medium">yt-dlp</a>. You'll need to have it installed on your computer.
               </p>
-              <ol className="list-decimal list-inside space-y-2 pl-2">
-                <li>Copy the unique link for your clip below.</li>
-                <li>Visit a YouTube downloader website (like `yt-dlp` or other online services).</li>
-                <li>Paste the link into their download field and follow their instructions.</li>
-              </ol>
-               <div className="mt-6 flex flex-col sm:flex-row gap-2">
-                  <input type="text" readOnly value={shareLink} className="flex-grow bg-gray-200 dark:bg-gray-900 border border-gray-400 dark:border-gray-600 rounded-md py-2 px-3 text-gray-600 dark:text-gray-300 focus:outline-none transition-colors duration-300"/>
-                  <button onClick={(e) => { e.preventDefault(); handleCopyLink(shareLink); }} className="flex items-center justify-center bg-brand-blue hover:bg-brand-blue-light text-white font-bold py-2 px-4 rounded-md transition-colors duration-300">
+              <p>
+                Copy and run the following command in your terminal:
+              </p>
+               <div className="mt-4 flex flex-col sm:flex-row gap-2">
+                  <code className="flex-grow bg-gray-200 dark:bg-gray-900 border border-gray-400 dark:border-gray-600 rounded-md py-3 px-4 text-gray-700 dark:text-gray-200 font-mono text-sm whitespace-pre-wrap break-all select-all">
+                    {ytdlpCommand}
+                  </code>
+                  <button 
+                    onClick={(e) => { e.preventDefault(); handleCopyCommand(ytdlpCommand); }} 
+                    className="flex-shrink-0 flex items-center justify-center bg-brand-blue hover:bg-brand-blue-light text-white font-bold py-2 px-4 rounded-md transition-colors duration-300"
+                  >
                       <CopyIcon className="w-5 h-5 mr-2" />
-                      {copyButtonText}
+                      {copyCommandButtonText}
                   </button>
               </div>
               <p className="text-xs text-gray-500 dark:text-gray-400 pt-2 transition-colors duration-300">
-                Disclaimer: Please be cautious when using third-party download services. Ensure you have the rights to download and use the content.
+                Disclaimer: Please ensure you have the rights to download and use the content in accordance with YouTube's terms of service and any applicable copyright laws.
               </p>
             </div>
           </div>
