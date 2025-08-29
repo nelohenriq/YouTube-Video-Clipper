@@ -11,6 +11,8 @@ import { FacebookIcon } from './components/icons/FacebookIcon';
 import { RedditIcon } from './components/icons/RedditIcon';
 import { WhatsAppIcon } from './components/icons/WhatsAppIcon';
 import { MailIcon } from './components/icons/MailIcon';
+import { DownloadIcon } from './components/icons/DownloadIcon';
+import { CloseIcon } from './components/icons/CloseIcon';
 import { extractYouTubeVideoId } from './utils/youtube';
 import { formatTime } from './utils/time';
 import type { PlayerControls } from './types';
@@ -27,6 +29,7 @@ const App: React.FC = () => {
   const [showPreview, setShowPreview] = useState<boolean>(false);
   const [copyButtonText, setCopyButtonText] = useState<string>('Copy');
   const [theme, setTheme] = useState<Theme>('dark');
+  const [isDownloadModalOpen, setIsDownloadModalOpen] = useState<boolean>(false);
   
   const playerRef = useRef<PlayerControls>(null);
 
@@ -248,12 +251,15 @@ const App: React.FC = () => {
                                 {copyButtonText}
                             </button>
                         </div>
-                        <div className="mt-4 flex justify-center items-center gap-4">
-                            <a href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(shareLink)}&text=${encodeURIComponent(shareText)}`} target="_blank" rel="noopener noreferrer" className="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors duration-200"><TwitterIcon className="w-6 h-6"/></a>
-                            <a href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareLink)}`} target="_blank" rel="noopener noreferrer" className="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors duration-200"><FacebookIcon className="w-6 h-6"/></a>
-                            <a href={`https://www.reddit.com/submit?url=${encodeURIComponent(shareLink)}&title=${encodeURIComponent(shareText)}`} target="_blank" rel="noopener noreferrer" className="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors duration-200"><RedditIcon className="w-6 h-6"/></a>
-                            <a href={`https://api.whatsapp.com/send?text=${encodeURIComponent(shareText + ' ' + shareLink)}`} target="_blank" rel="noopener noreferrer" className="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors duration-200"><WhatsAppIcon className="w-6 h-6"/></a>
-                             <a href={`mailto:?subject=${encodeURIComponent(shareText)}&body=${encodeURIComponent('I thought you might like this clip: ' + shareLink)}`} className="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors duration-200"><MailIcon className="w-6 h-6"/></a>
+                         <div className="mt-4 flex justify-center items-center gap-4">
+                            <button onClick={() => setIsDownloadModalOpen(true)} aria-label="Download clip" className="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors duration-200">
+                                <DownloadIcon className="w-6 h-6" />
+                            </button>
+                            <a href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(shareLink)}&text=${encodeURIComponent(shareText)}`} target="_blank" rel="noopener noreferrer" aria-label="Share on X" className="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors duration-200"><TwitterIcon className="w-6 h-6"/></a>
+                            <a href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareLink)}`} target="_blank" rel="noopener noreferrer" aria-label="Share on Facebook" className="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors duration-200"><FacebookIcon className="w-6 h-6"/></a>
+                            <a href={`https://www.reddit.com/submit?url=${encodeURIComponent(shareLink)}&title=${encodeURIComponent(shareText)}`} target="_blank" rel="noopener noreferrer" aria-label="Share on Reddit" className="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors duration-200"><RedditIcon className="w-6 h-6"/></a>
+                            <a href={`https://api.whatsapp.com/send?text=${encodeURIComponent(shareText + ' ' + shareLink)}`} target="_blank" rel="noopener noreferrer" aria-label="Share on WhatsApp" className="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors duration-200"><WhatsAppIcon className="w-6 h-6"/></a>
+                             <a href={`mailto:?subject=${encodeURIComponent(shareText)}&body=${encodeURIComponent('I thought you might like this clip: ' + shareLink)}`} aria-label="Share by Email" className="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors duration-200"><MailIcon className="w-6 h-6"/></a>
                         </div>
                     </div>
                 </div>
@@ -268,6 +274,49 @@ const App: React.FC = () => {
           </div>
         </main>
       </div>
+
+      {isDownloadModalOpen && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fade-in"
+          onClick={() => setIsDownloadModalOpen(false)}
+        >
+          <div 
+            className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-6 sm:p-8 w-11/12 max-w-lg m-4 border border-gray-300 dark:border-gray-700"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-xl font-bold text-gray-800 dark:text-gray-100">How to Download Your Clip</h3>
+              <button 
+                onClick={() => setIsDownloadModalOpen(false)} 
+                className="p-2 rounded-full text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700 dark:text-gray-400"
+                aria-label="Close download instructions"
+              >
+                <CloseIcon className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="space-y-4 text-gray-600 dark:text-gray-300">
+              <p>
+                Direct video downloads are not possible from this tool. However, you can use the clip link with a third-party YouTube downloader service.
+              </p>
+              <ol className="list-decimal list-inside space-y-2 pl-2">
+                <li>Copy the unique link for your clip below.</li>
+                <li>Visit a YouTube downloader website (like `yt-dlp` or other online services).</li>
+                <li>Paste the link into their download field and follow their instructions.</li>
+              </ol>
+               <div className="mt-6 flex flex-col sm:flex-row gap-2">
+                  <input type="text" readOnly value={shareLink} className="flex-grow bg-gray-200 dark:bg-gray-900 border border-gray-400 dark:border-gray-600 rounded-md py-2 px-3 text-gray-600 dark:text-gray-300 focus:outline-none"/>
+                  <button onClick={() => handleCopyLink(shareLink)} className="flex items-center justify-center bg-brand-blue hover:bg-brand-blue-light text-white font-bold py-2 px-4 rounded-md transition duration-200">
+                      <CopyIcon className="w-5 h-5 mr-2" />
+                      {copyButtonText}
+                  </button>
+              </div>
+              <p className="text-xs text-gray-500 dark:text-gray-400 pt-2">
+                Disclaimer: Please be cautious when using third-party download services. Ensure you have the rights to download and use the content.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
