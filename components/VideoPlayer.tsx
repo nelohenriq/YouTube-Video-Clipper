@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
+import React, { useEffect, useRef, forwardRef, useImperativeHandle, useMemo } from 'react';
 import type { YouTubePlayer } from 'react-youtube';
 import type { PlayerControls } from '../types';
 
@@ -44,7 +44,7 @@ const loadYouTubeAPI = (cb: () => void) => {
 export const VideoPlayer = forwardRef<PlayerControls, VideoPlayerProps>(({ videoId, start, end, theme }, ref) => {
   const playerInstanceRef = useRef<YouTubePlayer | null>(null);
   const clipIntervalRef = useRef<number | null>(null);
-  const playerId = `youtube-player-${videoId}-${Math.random()}`;
+  const playerId = useMemo(() => `youtube-player-${videoId}-${Math.random()}`, [videoId]);
 
   useImperativeHandle(ref, () => ({
     getCurrentTime: async () => {

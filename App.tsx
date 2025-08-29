@@ -55,11 +55,13 @@ const App: React.FC = () => {
     localStorage.setItem('theme', theme);
   }, [theme]);
 
-  const toggleTheme = () => {
+  const toggleTheme = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
     setTheme(prevTheme => (prevTheme === 'light' ? 'dark' : 'light'));
   };
 
-  const handleLoadVideo = useCallback(() => {
+  const handleLoadVideo = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
     setError(null);
     setVideoId(null);
     setClipStart(null);
@@ -84,7 +86,8 @@ const App: React.FC = () => {
     }, 500);
   }, [url]);
 
-  const handleSetStart = async () => {
+  const handleSetStart = useCallback(async (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
     const currentTime = await playerRef.current?.getCurrentTime();
     if (currentTime !== undefined) {
       playerRef.current?.pauseVideo();
@@ -93,24 +96,27 @@ const App: React.FC = () => {
         setClipEnd(null); 
       }
     }
-  };
+  }, [clipEnd]);
 
-  const handleSetEnd = async () => {
+  const handleSetEnd = useCallback(async (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
     const currentTime = await playerRef.current?.getCurrentTime();
     if (currentTime !== undefined) {
       playerRef.current?.pauseVideo();
       setClipEnd(currentTime);
     }
-  };
+  }, []);
 
-  const handleGenerateClip = () => {
+  const handleGenerateClip = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
     if (clipStart !== null && clipEnd !== null && clipStart < clipEnd) {
       setShowPreview(true);
       setCopyButtonText('Copy');
     }
-  };
+  }, [clipStart, clipEnd]);
 
-  const handleReset = () => {
+  const handleReset = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
     setUrl('');
     setVideoId(null);
     setClipStart(null);
@@ -118,7 +124,7 @@ const App: React.FC = () => {
     setError(null);
     setIsLoading(false);
     setShowPreview(false);
-  };
+  }, []);
   
   const handleCopyLink = (link: string) => {
     navigator.clipboard.writeText(link).then(() => {
@@ -246,13 +252,13 @@ const App: React.FC = () => {
                         <h4 className="text-lg font-semibold text-center text-gray-700 dark:text-gray-200 transition-colors duration-300">Share Your Clip</h4>
                         <div className="mt-4 flex flex-col sm:flex-row gap-2">
                             <input type="text" readOnly value={shareLink} className="flex-grow bg-gray-200 dark:bg-gray-900 border border-gray-400 dark:border-gray-600 rounded-md py-2 px-3 text-gray-600 dark:text-gray-300 focus:outline-none transition-colors duration-300"/>
-                            <button onClick={() => handleCopyLink(shareLink)} className="flex items-center justify-center bg-gray-300 hover:bg-gray-400 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-white font-bold py-2 px-4 rounded-md transition-colors duration-300">
+                            <button onClick={(e) => { e.preventDefault(); handleCopyLink(shareLink); }} className="flex items-center justify-center bg-gray-300 hover:bg-gray-400 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-white font-bold py-2 px-4 rounded-md transition-colors duration-300">
                                 <CopyIcon className="w-5 h-5 mr-2" />
                                 {copyButtonText}
                             </button>
                         </div>
                          <div className="mt-4 flex justify-center items-center gap-4">
-                            <button onClick={() => setIsDownloadModalOpen(true)} aria-label="Download clip" className="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors duration-300">
+                            <button onClick={(e) => { e.preventDefault(); setIsDownloadModalOpen(true); }} aria-label="Download clip" className="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors duration-300">
                                 <DownloadIcon className="w-6 h-6" />
                             </button>
                             <a href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(shareLink)}&text=${encodeURIComponent(shareText)}`} target="_blank" rel="noopener noreferrer" aria-label="Share on X" className="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors duration-300"><TwitterIcon className="w-6 h-6"/></a>
@@ -287,7 +293,7 @@ const App: React.FC = () => {
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-xl font-bold text-gray-800 dark:text-gray-100">How to Download Your Clip</h3>
               <button 
-                onClick={() => setIsDownloadModalOpen(false)} 
+                onClick={(e) => { e.preventDefault(); setIsDownloadModalOpen(false); }} 
                 className="p-2 rounded-full text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700 dark:text-gray-400 transition-colors duration-300"
                 aria-label="Close download instructions"
               >
@@ -305,7 +311,7 @@ const App: React.FC = () => {
               </ol>
                <div className="mt-6 flex flex-col sm:flex-row gap-2">
                   <input type="text" readOnly value={shareLink} className="flex-grow bg-gray-200 dark:bg-gray-900 border border-gray-400 dark:border-gray-600 rounded-md py-2 px-3 text-gray-600 dark:text-gray-300 focus:outline-none transition-colors duration-300"/>
-                  <button onClick={() => handleCopyLink(shareLink)} className="flex items-center justify-center bg-brand-blue hover:bg-brand-blue-light text-white font-bold py-2 px-4 rounded-md transition-colors duration-300">
+                  <button onClick={(e) => { e.preventDefault(); handleCopyLink(shareLink); }} className="flex items-center justify-center bg-brand-blue hover:bg-brand-blue-light text-white font-bold py-2 px-4 rounded-md transition-colors duration-300">
                       <CopyIcon className="w-5 h-5 mr-2" />
                       {copyButtonText}
                   </button>

@@ -5,7 +5,7 @@ import { MoonIcon } from './icons/MoonIcon';
 
 interface HeaderProps {
   theme: 'light' | 'dark';
-  toggleTheme: () => void;
+  toggleTheme: (e: React.MouseEvent<HTMLButtonElement>) => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({ theme, toggleTheme }) => {
