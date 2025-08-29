@@ -1,0 +1,5 @@
+{
+  "name": "YouTube Video Clipper",
+  "description": "An application to clip and watch specific segments of YouTube videos by providing a URL and a start/end time.",
+  "requestFramePermissions": []
+}
