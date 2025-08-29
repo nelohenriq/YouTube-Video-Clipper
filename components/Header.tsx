@@ -12,14 +12,14 @@ export const Header: React.FC<HeaderProps> = ({ theme, toggleTheme }) => {
   return (
     <header className="flex justify-between items-center py-4">
       <div className="flex items-center gap-4">
-        <div className="w-12 h-12 bg-white/10 dark:bg-black/20 p-2 rounded-full shadow-inner">
+        <div className="w-12 h-12 bg-white/10 dark:bg-black/20 p-2 rounded-full shadow-inner transition-colors duration-300">
             <ScissorsIcon className="text-brand-blue" />
         </div>
         <div>
             <h1 className="text-3xl sm:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-purple-600 dark:from-blue-400 dark:to-purple-500">
                 YouTube Clipper
             </h1>
-            <p className="mt-1 text-md text-gray-600 dark:text-gray-400 hidden sm:block">
+            <p className="mt-1 text-md text-gray-600 dark:text-gray-400 hidden sm:block transition-colors duration-300">
                 Create and share clips instantly.
             </p>
         </div>
