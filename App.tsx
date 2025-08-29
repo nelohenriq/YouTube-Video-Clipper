@@ -13,8 +13,11 @@ import { WhatsAppIcon } from './components/icons/WhatsAppIcon';
 import { MailIcon } from './components/icons/MailIcon';
 import { DownloadIcon } from './components/icons/DownloadIcon';
 import { CloseIcon } from './components/icons/CloseIcon';
+import { PencilIcon } from './components/icons/PencilIcon';
+import { CheckIcon } from './components/icons/CheckIcon';
+import { TikTokIcon } from './components/icons/TikTokIcon';
 import { extractYouTubeVideoId } from './utils/youtube';
-import { formatTime, formatTimeForCli } from './utils/time';
+import { formatTime, parseTime, formatTimeForCli } from './utils/time';
 import type { PlayerControls } from './types';
 
 type Theme = 'light' | 'dark';
@@ -24,6 +27,10 @@ const App: React.FC = () => {
   const [videoId, setVideoId] = useState<string | null>(null);
   const [clipStart, setClipStart] = useState<number | null>(null);
   const [clipEnd, setClipEnd] = useState<number | null>(null);
+  const [startTimeInput, setStartTimeInput] = useState<string>('--:--');
+  const [endTimeInput, setEndTimeInput] = useState<string>('--:--');
+  const [isEditingStart, setIsEditingStart] = useState<boolean>(false);
+  const [isEditingEnd, setIsEditingEnd] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [showPreview, setShowPreview] = useState<boolean>(false);
@@ -55,6 +62,14 @@ const App: React.FC = () => {
     }
     localStorage.setItem('theme', theme);
   }, [theme]);
+  
+  useEffect(() => {
+    setStartTimeInput(formatTime(clipStart));
+  }, [clipStart]);
+
+  useEffect(() => {
+    setEndTimeInput(formatTime(clipEnd));
+  }, [clipEnd]);
 
   const toggleTheme = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
@@ -107,12 +122,49 @@ const App: React.FC = () => {
       setClipEnd(currentTime);
     }
   }, []);
+  
+  const handleTimeInputChange = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    type: 'start' | 'end'
+  ) => {
+    const value = e.target.value;
+    if (/^[\d:]*$/.test(value)) {
+      if (type === 'start') {
+        setStartTimeInput(value);
+      } else {
+        setEndTimeInput(value);
+      }
+    }
+  };
+
+  const handleTimeInputBlur = (type: 'start' | 'end') => {
+    const value = type === 'start' ? startTimeInput : endTimeInput;
+    const timeInSeconds = parseTime(value);
+
+    if (type === 'start') {
+      if (timeInSeconds !== null) {
+        setClipStart(timeInSeconds);
+         if (clipEnd !== null && timeInSeconds >= clipEnd) {
+           setClipEnd(null);
+         }
+      } else {
+        setStartTimeInput(formatTime(clipStart));
+      }
+    } else { // 'end'
+      if (timeInSeconds !== null) {
+        setClipEnd(timeInSeconds);
+      } else {
+        setEndTimeInput(formatTime(clipEnd));
+      }
+    }
+  };
 
   const handleGenerateClip = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
     if (clipStart !== null && clipEnd !== null && clipStart < clipEnd) {
       setShowPreview(true);
       setCopyButtonText('Copy');
+      setCopyCommandButtonText('Copy');
     }
   }, [clipStart, clipEnd]);
 
@@ -127,25 +179,30 @@ const App: React.FC = () => {
     setShowPreview(false);
   }, []);
   
-  const handleCopyLink = useCallback((link: string) => {
+  const handleCopyLink = (link: string) => {
     navigator.clipboard.writeText(link).then(() => {
       setCopyButtonText('Copied!');
       setTimeout(() => setCopyButtonText('Copy'), 2000);
     });
-  }, []);
+  };
 
-  const handleCopyCommand = useCallback((command: string) => {
+  const handleCopyCommand = (command: string) => {
     navigator.clipboard.writeText(command).then(() => {
       setCopyCommandButtonText('Copied!');
       setTimeout(() => setCopyCommandButtonText('Copy'), 2000);
     });
-  }, []);
+  };
 
   const canGenerate = clipStart !== null && clipEnd !== null && clipStart < clipEnd;
   const clipDuration = canGenerate ? clipEnd - clipStart : 0;
   const shareLink = canGenerate ? `https://www.youtube.com/watch?v=${videoId}&start=${Math.floor(clipStart)}&end=${Math.floor(clipEnd)}` : '';
   const shareText = "Check out this video clip I made!";
-  const ytdlpCommand = canGenerate ? `yt-dlp --download-sections "*${formatTimeForCli(clipStart)}-${formatTimeForCli(clipEnd)}" -o "youtube-clip.mp4" "https://www.youtube.com/watch?v=${videoId}"` : '';
+
+  const formattedStartTimeForCli = formatTimeForCli(clipStart);
+  const formattedEndTimeForCli = formatTimeForCli(clipEnd);
+  const videoUrlForCli = `https://www.youtube.com/watch?v=${videoId}`;
+  const ytdlpCommand = `yt-dlp --download-sections "*${formattedStartTimeForCli}-${formattedEndTimeForCli}" "${videoUrlForCli}"`;
+
 
   return (
     <div className="min-h-screen text-gray-800 dark:text-gray-100 flex flex-col items-center p-4 sm:p-6 lg:p-8">
@@ -211,7 +268,23 @@ const App: React.FC = () => {
                                 <SetTimeIcon className="w-5 h-5 mr-2" />
                                 Set Start
                             </button>
-                            <p className="mt-2 text-2xl font-mono tracking-wider text-green-600 dark:text-green-400 transition-colors duration-300">{formatTime(clipStart)}</p>
+                            <div className="mt-2 flex items-center justify-center gap-2" style={{minHeight: '44px'}}>
+                                {!isEditingStart ? (
+                                    <>
+                                        <p className="w-32 text-center text-2xl font-mono tracking-wider text-green-600 dark:text-green-400">{formatTime(clipStart)}</p>
+                                        <button onClick={() => !showPreview && setIsEditingStart(true)} className="p-1 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed" disabled={showPreview} aria-label="Edit start time">
+                                            <PencilIcon className="w-5 h-5" />
+                                        </button>
+                                    </>
+                                ) : (
+                                    <>
+                                        <input type="text" value={startTimeInput} onChange={(e) => handleTimeInputChange(e, 'start')} onBlur={() => { handleTimeInputBlur('start'); setIsEditingStart(false); }} onKeyDown={(e) => { if (e.key === 'Enter') { handleTimeInputBlur('start'); setIsEditingStart(false); } else if (e.key === 'Escape') { setStartTimeInput(formatTime(clipStart)); setIsEditingStart(false); }}} placeholder="00:00" className="w-32 text-center bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md py-1 px-2 text-2xl font-mono tracking-wider text-green-600 dark:text-green-400 focus:ring-2 focus:ring-brand-blue" autoFocus />
+                                        <button onClick={() => { handleTimeInputBlur('start'); setIsEditingStart(false); }} className="p-1 rounded-full text-green-500 hover:bg-green-100 dark:hover:bg-green-900/50" aria-label="Save start time">
+                                            <CheckIcon className="w-6 h-6" />
+                                        </button>
+                                    </>
+                                )}
+                            </div>
                         </div>
 
                         <div className="flex flex-col items-center">
@@ -229,7 +302,23 @@ const App: React.FC = () => {
                                 <SetTimeIcon className="w-5 h-5 mr-2" />
                                 Set End
                             </button>
-                            <p className="mt-2 text-2xl font-mono tracking-wider text-red-600 dark:text-red-400 transition-colors duration-300">{formatTime(clipEnd)}</p>
+                            <div className="mt-2 flex items-center justify-center gap-2" style={{minHeight: '44px'}}>
+                                {!isEditingEnd ? (
+                                    <>
+                                        <p className="w-32 text-center text-2xl font-mono tracking-wider text-red-600 dark:text-red-400">{formatTime(clipEnd)}</p>
+                                        <button onClick={() => !showPreview && setIsEditingEnd(true)} className="p-1 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed" disabled={showPreview} aria-label="Edit end time">
+                                            <PencilIcon className="w-5 h-5" />
+                                        </button>
+                                    </>
+                                ) : (
+                                    <>
+                                        <input type="text" value={endTimeInput} onChange={(e) => handleTimeInputChange(e, 'end')} onBlur={() => { handleTimeInputBlur('end'); setIsEditingEnd(false); }} onKeyDown={(e) => { if (e.key === 'Enter') { handleTimeInputBlur('end'); setIsEditingEnd(false); } else if (e.key === 'Escape') { setEndTimeInput(formatTime(clipEnd)); setIsEditingEnd(false); }}} placeholder="00:00" className="w-32 text-center bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md py-1 px-2 text-2xl font-mono tracking-wider text-red-600 dark:text-red-400 focus:ring-2 focus:ring-brand-blue" autoFocus />
+                                        <button onClick={() => { handleTimeInputBlur('end'); setIsEditingEnd(false); }} className="p-1 rounded-full text-green-500 hover:bg-green-100 dark:hover:bg-green-900/50" aria-label="Save end time">
+                                            <CheckIcon className="w-6 h-6" />
+                                        </button>
+                                    </>
+                                )}
+                            </div>
                         </div>
                     </div>
                      {clipStart !== null && clipEnd !== null && !canGenerate && (
@@ -270,6 +359,9 @@ const App: React.FC = () => {
                             <button onClick={(e) => { e.preventDefault(); setIsDownloadModalOpen(true); }} aria-label="Download clip" className="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors duration-300">
                                 <DownloadIcon className="w-6 h-6" />
                             </button>
+                            <button onClick={(e) => { e.preventDefault(); setIsDownloadModalOpen(true); }} aria-label="Share on TikTok" className="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors duration-300">
+                                <TikTokIcon className="w-6 h-6"/>
+                            </button>
                             <a href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(shareLink)}&text=${encodeURIComponent(shareText)}`} target="_blank" rel="noopener noreferrer" aria-label="Share on X" className="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors duration-300"><TwitterIcon className="w-6 h-6"/></a>
                             <a href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareLink)}`} target="_blank" rel="noopener noreferrer" aria-label="Share on Facebook" className="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors duration-300"><FacebookIcon className="w-6 h-6"/></a>
                             <a href={`https://www.reddit.com/submit?url=${encodeURIComponent(shareLink)}&title=${encodeURIComponent(shareText)}`} target="_blank" rel="noopener noreferrer" aria-label="Share on Reddit" className="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors duration-300"><RedditIcon className="w-6 h-6"/></a>
@@ -300,7 +392,7 @@ const App: React.FC = () => {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xl font-bold text-gray-800 dark:text-gray-100">Download Clip with yt-dlp</h3>
+              <h3 className="text-xl font-bold text-gray-800 dark:text-gray-100">How to Download Your Clip</h3>
               <button 
                 onClick={(e) => { e.preventDefault(); setIsDownloadModalOpen(false); }} 
                 className="p-2 rounded-full text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700 dark:text-gray-400 transition-colors duration-300"
@@ -311,25 +403,48 @@ const App: React.FC = () => {
             </div>
             <div className="space-y-4 text-gray-600 dark:text-gray-300 transition-colors duration-300">
               <p>
-                You can download your clip using the popular command-line tool <a href="https://github.com/yt-dlp/yt-dlp" target="_blank" rel="noopener noreferrer" className="text-brand-blue hover:underline font-medium">yt-dlp</a>. You'll need to have it installed on your computer.
+                Direct video downloads are not possible from this tool. However, you can use the clip link with a third-party YouTube downloader service or a command-line tool.
               </p>
-              <p>
-                Copy and run the following command in your terminal:
-              </p>
-               <div className="mt-4 flex flex-col sm:flex-row gap-2">
-                  <code className="flex-grow bg-gray-200 dark:bg-gray-900 border border-gray-400 dark:border-gray-600 rounded-md py-3 px-4 text-gray-700 dark:text-gray-200 font-mono text-sm whitespace-pre-wrap break-all select-all">
-                    {ytdlpCommand}
-                  </code>
-                  <button 
-                    onClick={(e) => { e.preventDefault(); handleCopyCommand(ytdlpCommand); }} 
-                    className="flex-shrink-0 flex items-center justify-center bg-brand-blue hover:bg-brand-blue-light text-white font-bold py-2 px-4 rounded-md transition-colors duration-300"
-                  >
-                      <CopyIcon className="w-5 h-5 mr-2" />
-                      {copyCommandButtonText}
-                  </button>
+              <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-600">
+                  <h4 className="text-lg font-semibold text-gray-700 dark:text-gray-200">Option 1: Use the Clip Link</h4>
+                  <ol className="list-decimal list-inside space-y-2 pl-2 mt-2">
+                    <li>Copy the unique link for your clip below.</li>
+                    <li>Visit a YouTube downloader website and paste the link.</li>
+                    <li>Follow their instructions to download the video segment.</li>
+                  </ol>
+                  <div className="mt-4 flex flex-col sm:flex-row gap-2">
+                      <input type="text" readOnly value={shareLink} className="flex-grow bg-gray-200 dark:bg-gray-900 border border-gray-400 dark:border-gray-600 rounded-md py-2 px-3 text-gray-600 dark:text-gray-300 focus:outline-none transition-colors duration-300"/>
+                      <button onClick={(e) => { e.preventDefault(); handleCopyLink(shareLink); }} className="flex items-center justify-center bg-brand-blue hover:bg-brand-blue-light text-white font-bold py-2 px-4 rounded-md transition-colors duration-300">
+                          <CopyIcon className="w-5 h-5 mr-2" />
+                          {copyButtonText}
+                      </button>
+                  </div>
               </div>
-              <p className="text-xs text-gray-500 dark:text-gray-400 pt-2 transition-colors duration-300">
-                Disclaimer: Please ensure you have the rights to download and use the content in accordance with YouTube's terms of service and any applicable copyright laws.
+
+              <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-600">
+                <h4 className="text-lg font-semibold text-gray-700 dark:text-gray-200">Option 2: Command Line (yt-dlp)</h4>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                    For advanced users, use the <a href="https://github.com/yt-dlp/yt-dlp" target="_blank" rel="noopener noreferrer" className="text-brand-blue hover:underline">yt-dlp</a> tool. Paste this command into your terminal:
+                </p>
+                <div className="mt-4 flex flex-col sm:flex-row gap-2">
+                    <input 
+                        type="text" 
+                        readOnly 
+                        value={ytdlpCommand} 
+                        className="flex-grow bg-gray-200 dark:bg-gray-900 border border-gray-400 dark:border-gray-600 rounded-md py-2 px-3 text-gray-600 dark:text-gray-300 focus:outline-none font-mono text-sm"
+                    />
+                    <button 
+                        onClick={(e) => { e.preventDefault(); handleCopyCommand(ytdlpCommand); }}
+                        className="flex items-center justify-center bg-gray-300 hover:bg-gray-400 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-white font-bold py-2 px-4 rounded-md transition-colors duration-300"
+                    >
+                        <CopyIcon className="w-5 h-5 mr-2" />
+                        {copyCommandButtonText}
+                    </button>
+                </div>
+              </div>
+
+              <p className="text-xs text-gray-500 dark:text-gray-400 pt-4 transition-colors duration-300">
+                <strong>Disclaimer:</strong> Please be cautious when using third-party download services. Ensure you have the rights to download and use the content.
               </p>
             </div>
           </div>
